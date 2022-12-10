@@ -1,4 +1,5 @@
 push = require 'push'
+Timer = require 'Knife.timer'
 
 -- for GenerateQuads
 require 'Util'
@@ -80,10 +81,16 @@ function love.keypressed(key)
             board[tile1.gridY][tile1.gridX] = tile2
             board[tile2.gridY][tile2.gridX] = tempTile
 
+            --Usar Tween para deslocar tiles ao longo do tempo
+            Timer.tween(0.2, {
+                [tile2] = {x = tile1.x, y = tile1.y},
+                [tile1] = {x = tempX, y = tempY}
+            })
+
             --Trocar coordenadas dos 2 tiles
-            tile2.x, tile2.y = tile1.x, tile1.y
+            --tile2.x, tile2.y = tile1.x, tile1.y
             tile2.gridX, tile2.gridY = tile1.gridX, tile1.gridY
-            tile1.x, tile1.y = tempX, tempY
+            --tile1.x, tile1.y = tempX, tempY
             tile1.gridX, tile1.gridY = tempGridX, tempGridY
 
             --Desselecionar o tile escolhido
@@ -92,6 +99,10 @@ function love.keypressed(key)
             selectedTile = tile2
         end
     end
+end
+
+function love.update(dt)
+    Timer.update(dt)
 end
 
 function love.draw()
