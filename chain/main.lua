@@ -1,4 +1,5 @@
 push = require 'push'
+Timer = require 'Knife.timer'
 
 VIRTUAL_WIDTH = 384
 VIRTUAL_HEIGHT = 216
@@ -16,26 +17,28 @@ function love.load()
     --Carregar sprite
     birdSprite = love.graphics.newImage('flappy.png')
     --Criar duas variaveis na mesma linha
-    birdX, birdY = 0, 0
-    baseX, baseY = birdX, birdY
+    bird = {x = 0, y = 0}
 
-    timer = 0
-
-    --coordenadas dos meus destinos
-    destinations = {
-        --Mover para a direita
-        [1] = {x = VIRTUAL_WIDTH - birdSprite:getWidth(), y = 0},
-        --Mover para baixo
-        [2] = {x = VIRTUAL_WIDTH - birdSprite:getWidth(), y = VIRTUAL_HEIGHT - birdSprite:getHeight()},
-        --Mover para a esquerda
-        [3] = {x = 0, y = VIRTUAL_HEIGHT - birdSprite:getHeight()},
-        --Mover para a posiçao inicial(topo esquerdo)
-        [4] = {x = 0, y = 0}
-    }
-
-    for k, destination in pairs(destinations) do 
-        destination.reached = false
-    end
+    --Tween --
+    --Apos cada interpolaçao encerrar passar para a proxima(IEnumerator)
+    Timer.tween(MOVEMENT_TIME, {
+        [bird] = {x = VIRTUAL_WIDTH - birdSprite:getWidth(), y = 0}
+    })
+    :finish(function()
+        Timer.tween(MOVEMENT_TIME, {
+        [bird] = {x = VIRTUAL_WIDTH - birdSprite:getWidth(), y = VIRTUAL_HEIGHT - birdSprite:getHeight()}
+        })
+        :finish(function()
+            Timer.tween(MOVEMENT_TIME, {
+                [bird] = {x = 0, y = VIRTUAL_HEIGHT - birdSprite:getHeight()}
+            })
+            :finish(function()
+                Timer.tween(MOVEMENT_TIME, {
+                    [bird] = {x = 0, y = 0}
+                })
+            end)
+        end)
+    end)
 
     love.graphics.setDefaultFilter('nearest', 'nearest')
 
@@ -44,10 +47,10 @@ function love.load()
         vsyn = true,
         resizable = true
     })
+end
 
-    function love.resize(w, h)
-        push:resize(w, h)
-    end
+function love.resize(w, h)
+    push:resize(w, h)
 end
 
 function love.keypressed(key)
@@ -57,30 +60,12 @@ function love.keypressed(key)
 end
 
 function love.update(dt)
-    --
-    timer = math.min(MOVEMENT_TIME, timer + dt)
-
-    --ipairs para matrizes
-    for i, destination in ipairs(destinations) do
-        if not destination.reached then
-            --interpolaçao linear entre posiçoes
-            birdX, birdY = baseX + (destination.x - baseX) * timer / MOVEMENT_TIME,
-            baseY + (destination.y - baseY) * timer / MOVEMENT_TIME
-
-            --Se o contador chegar a 2s
-            if timer == MOVEMENT_TIME then
-                destination.reached = true --cheguei ao me destino
-                baseX, baseY = destination.x, destination.y --Posiçao atual
-                timer = 0 --reniciar contador
-            end
-            --So precisa de calcular o primeiro destination.reached
-            break
-        end
-    end
+    --Uso do meu Tween:update
+    Timer.update(dt)
 end
    
 function love.draw()
     push:start()
-    love.graphics.draw(birdSprite, birdX, birdY)
+    love.graphics.draw(birdSprite, bird.x, bird.y)
     push:finish()
 end
